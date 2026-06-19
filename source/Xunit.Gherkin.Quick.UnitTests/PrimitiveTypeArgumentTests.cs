@@ -46,14 +46,9 @@ namespace UnitTests
 
             var arguments = new dynamic[] { 123, "Ana", new DateTime(2018, 5, 23) };
             var argumentsAsString = new string[] { $"{arguments[0]}", $"{arguments[1]}", $"{arguments[2].Month}/{arguments[2].Day}/{arguments[2].Year}" };
-            var step = new Gherkin.Ast.Step(
-                null,
-                "Then",
-                $@"I should have {argumentsAsString[0]} apples from {argumentsAsString[1]} by {argumentsAsString[2]}",
-                null);
 
             //act.
-            sut.DigestScenarioStepValues(argumentsAsString, step.Argument);
+            sut.DigestScenarioStepValues(argumentsAsString);
 
             //assert.
             Assert.Equal(arguments[index], sut.Value);

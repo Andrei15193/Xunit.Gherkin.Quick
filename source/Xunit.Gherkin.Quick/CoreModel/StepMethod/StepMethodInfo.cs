@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Gherkin.Ast;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -68,7 +68,7 @@ namespace Xunit.Gherkin.Quick
             return other != null
                 && other._methodInfoWrapper.IsSameAs(_methodInfoWrapper);
         }
-        
+
         public async Task ExecuteAsync()
         {
             await _methodInfoWrapper.InvokeMethodAsync(_arguments.Select(arg => arg.Value).ToArray());
@@ -80,42 +80,47 @@ namespace Xunit.Gherkin.Quick
 
             return new StepMethodInfo(ScenarioStepPatterns, argumentsClone, _methodInfoWrapper);
         }
-        
-        public void DigestScenarioStepValues(Step gherkinScenarioStep)
+
+        public void DigestScenarioStepValues(TestStep testStep)
         {
             if (_arguments.Count == 0)
                 return;
 
-            var matchingPattern = GetMatchingPattern(gherkinScenarioStep);
-            var gherkinStepText = gherkinScenarioStep.Text.Trim();
+            var matchingPattern = GetMatchingPattern(testStep);
+            var testStepText = testStep.Text.Trim();
 
             if (matchingPattern == null)
-                throw new InvalidOperationException($"This step (`{_methodInfoWrapper.GetMethodName()}`) cannot handle scenario step `{gherkinScenarioStep.Keyword.Trim()} {gherkinStepText}`.");
+                throw new InvalidOperationException($"This step (`{_methodInfoWrapper.GetMethodName()}`) cannot handle scenario step `{testStep.Type} {testStepText}`.");
 
-            var argumentValuesFromStep = Regex.Match(gherkinStepText, matchingPattern.RegexPattern).Groups.Cast<Group>()
+            var argumentValuesFromStep = Regex.Match(testStepText, matchingPattern.RegexPattern).Groups.Cast<Group>()
                 .Skip(1)
                 .Select(g => g.Value)
                 .ToArray();
-            
+
             foreach (var arg in _arguments)
             {
-                arg.DigestScenarioStepValues(argumentValuesFromStep, gherkinScenarioStep.Argument);
+                if (testStep.DocStringArgument is object)
+                    arg.DigestScenarioStepValues(argumentValuesFromStep, testStep.DocStringArgument);
+                else if (testStep.TableArgument is object)
+                    arg.DigestScenarioStepValues(argumentValuesFromStep, testStep.TableArgument);
+                else
+                    arg.DigestScenarioStepValues(argumentValuesFromStep);
             }
 
-            _lastDigestedStepText = gherkinStepText;
+            _lastDigestedStepText = testStepText;
         }
-        
-        public ScenarioStepPattern GetMatchingPattern(Step gherkinScenarioStep)
+
+        public ScenarioStepPattern GetMatchingPattern(TestStep testStep)
         {
-            var gherkinStepText = gherkinScenarioStep.Text.Trim();
+            var testStepText = testStep.Text.Trim();
 
             foreach (var pattern in ScenarioStepPatterns)
             {
-                if (!pattern.Kind.Matches(gherkinScenarioStep.Keyword.Trim()))
+                if ((pattern.Type & testStep.Type) != pattern.Type)
                     continue;
 
-                var match = Regex.Match(gherkinStepText, pattern.RegexPattern);
-                if (!match.Success || !match.Value.Equals(gherkinStepText))
+                var match = Regex.Match(testStepText, pattern.RegexPattern);
+                if (!match.Success || !match.Value.Equals(testStepText))
                     continue;
 
                 return pattern;
@@ -124,26 +129,17 @@ namespace Xunit.Gherkin.Quick
             return null;
         }
 
-        public bool Matches(Step gherkinScenarioStep)
+        public bool Matches(TestStep testStep)
         {
-            var matchingPattern = GetMatchingPattern(gherkinScenarioStep);
+            var matchingPattern = GetMatchingPattern(testStep);
             var isMatch = matchingPattern != null;
             return isMatch;
         }
     }
 
-    internal enum PatternKind
-    {
-        Given,
-        When,
-        Then,
-        And,
-        But
-    }
-
     internal static class PatternKindExtensions
     {
-        public static PatternKind ToPatternKind(BaseStepDefinitionAttribute @this)
+        public static TestStepType ToTestStepType(BaseStepDefinitionAttribute @this)
         {
             if (@this == null)
                 throw new ArgumentNullException(nameof(@this));
@@ -151,31 +147,23 @@ namespace Xunit.Gherkin.Quick
             switch (@this)
             {
                 case GivenAttribute _:
-                    return PatternKind.Given;
+                    return TestStepType.Given;
 
                 case WhenAttribute _:
-                    return PatternKind.When;
+                    return TestStepType.When;
 
                 case ThenAttribute _:
-                    return PatternKind.Then;
+                    return TestStepType.Then;
 
                 case AndAttribute _:
-                    return PatternKind.And;
+                    return TestStepType.And;
 
                 case ButAttribute _:
-                    return PatternKind.But;
+                    return TestStepType.But;
 
                 default:
                     throw new NotSupportedException($"Cannot convert into step method kind: Attribute type {@this.GetType()} is not supported.");
             }
-        }
-
-        public static bool Matches(this PatternKind patternKind, string keyword)
-        {
-            if (keyword == "*")
-                return true;
-
-            return patternKind.ToString().Equals(keyword, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

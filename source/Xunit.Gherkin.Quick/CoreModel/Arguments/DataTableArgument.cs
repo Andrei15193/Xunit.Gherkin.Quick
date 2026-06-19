@@ -1,26 +1,23 @@
-﻿using Gherkin.Ast;
-using System;
+﻿using System;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
     internal sealed class DataTableArgument : StepMethodArgument
     {
         public override StepMethodArgument Clone()
-        {
-            return new DataTableArgument();
-        }
+            => new DataTableArgument();
 
-        public override void DigestScenarioStepValues(string[] argumentValues, StepArgument gherkinStepArgument)
-        {
-            if (!(gherkinStepArgument is DataTable dataTable))
-                throw new InvalidOperationException("DataTable cannot be extracted from Gherkin.");
+        public override void DigestScenarioStepValues(string[] argumentValues, TestStepDocStringArgument docStringArgument)
+            => throw new InvalidOperationException("DataTable cannot be extracted from Gherkin.");
 
-            Value = dataTable;
-        }
+        public override void DigestScenarioStepValues(string[] argumentValues, TestStepTableArgument tableArgument)
+            => Value = tableArgument ?? throw new InvalidOperationException("DataTable cannot be extracted from Gherkin.");
+
+        public override void DigestScenarioStepValues(string[] argumentValues)
+            => throw new InvalidOperationException("DataTable cannot be extracted from Gherkin.");
 
         public override bool IsSameAs(StepMethodArgument other)
-        {
-            return other is DataTableArgument;
-        }
+            => other is DataTableArgument;
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -14,7 +15,7 @@ namespace UnitTests
             var sut = new DocStringArgument();
 
             //act / assert.
-            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(new string[0], null));
+            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues([], (TestStepDocStringArgument)null));
         }
 
         [Fact]
@@ -24,7 +25,7 @@ namespace UnitTests
             var sut = new DocStringArgument();
 
             //act / assert.
-            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(new string[] { "1", "2", "3" }, null));
+            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(["1", "2", "3"], (TestStepDocStringArgument)null));
         }
 
         [Fact]
@@ -37,10 +38,10 @@ namespace UnitTests
 with multi lines
 ---
 in it";
-            var docString = new Gherkin.Ast.DocString(null, null, docStringContent);
+            var docString = new TestStepDocStringArgument(docStringContent, null, null);
 
             //act.
-            sut.DigestScenarioStepValues(new string[0], docString);
+            sut.DigestScenarioStepValues([], docString);
 
             //assert.
             Assert.Same(docString, sut.Value);
@@ -56,10 +57,10 @@ in it";
 with multi lines
 ---
 in it";
-            var docString = new Gherkin.Ast.DocString(null, null, docStringContent);
+            var docString = new TestStepDocStringArgument(docStringContent, null, null);
 
             //act.
-            sut.DigestScenarioStepValues(new string[] { "1", "2", "3" }, docString);
+            sut.DigestScenarioStepValues(["1", "2", "3"], docString);
 
             //assert.
             Assert.Same(docString, sut.Value);

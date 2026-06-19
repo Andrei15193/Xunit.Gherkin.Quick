@@ -1,30 +1,31 @@
 ﻿using Moq;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
     public sealed class ScenarioExecutorTests
     {
-        private readonly Mock<IFeatureFileRepository> _featureFileRepository = new Mock<IFeatureFileRepository>();
         private readonly ScenarioExecutor _sut;
 
         public ScenarioExecutorTests()
         {
-            _sut = new ScenarioExecutor(_featureFileRepository.Object);
+            _sut = new ScenarioExecutor();
         }
 
         [Fact]
         public async Task ExecuteScenario_Requires_FeatureInstance()
         {
             //act / assert.
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await _sut.ExecuteScenarioAsync(null, "valid scenario name", "valid route"));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await _sut.ExecuteScenarioAsync(null, new("feature", "scenario", CultureInfo.InvariantCulture, [], [])));
         }
 
         [Theory]
@@ -39,89 +40,81 @@ namespace UnitTests
             var featureInstance = new UselessFeature();
 
             //act / assert.
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await _sut.ExecuteScenarioAsync(featureInstance, new("feature", scenarioName, CultureInfo.InvariantCulture, [], [])));
         }
 
-        private sealed class UselessFeature : Feature { }		
+        private sealed class UselessFeature : Feature { }
 
         [Fact]
         public async Task ExecuteScenario_Executes_All_Scenario_Steps()
         {
             //arrange.
-            var step1Text = "Given " + FeatureWithScenarioSteps.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase);
-            var step2Text = "And " + FeatureWithScenarioSteps.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase);
-            var step3Text = "When " + FeatureWithScenarioSteps.ScenarioStep3Text;
-            var step4Text = "Then " + FeatureWithScenarioSteps.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase);
+            var step1Text = FeatureWithScenarioSteps.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase);
+            var step2Text = FeatureWithScenarioSteps.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase);
+            var step3Text = FeatureWithScenarioSteps.ScenarioStep3Text;
+            var step4Text = FeatureWithScenarioSteps.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase);
             var featureFilePath = $"{nameof(FeatureWithScenarioSteps)}.feature";
 
             var scenarioName = "scenario 12345";
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(CreateGherkinDocument(scenarioName,
-                    new string[] 
-                    {
-                        step1Text,
-                        step2Text,
-                        step3Text,
-                        step4Text
-                    })))
-                .Verifiable();
-
             var featureInstance = new FeatureWithScenarioSteps();
             var output = new Mock<ITestOutputHelper>();
             featureInstance.InternalOutput = output.Object;
 
             //act.
-            await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath);
+            await _sut.ExecuteScenarioAsync(featureInstance, new("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, step1Text),
+                new(TestStepType.And, step2Text),
+                new(TestStepType.When, step3Text),
+                new(TestStepType.Then, step4Text)
+            ]));
 
             //assert.
-            _featureFileRepository.Verify();
-
             Assert.Equal(4, featureInstance.CallStack.Count);
 
             Assert.Equal(nameof(FeatureWithScenarioSteps.ScenarioStep1), featureInstance.CallStack[0].Key);
             Assert.NotNull(featureInstance.CallStack[0].Value);
             Assert.Single(featureInstance.CallStack[0].Value);
             Assert.Equal(12, featureInstance.CallStack[0].Value[0]);
-            output.Verify(o => o.WriteLine($"{step1Text}: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Given {step1Text}: PASSED"), Times.Once);
 
             Assert.Equal(nameof(FeatureWithScenarioSteps.ScenarioStep2), featureInstance.CallStack[1].Key);
             Assert.NotNull(featureInstance.CallStack[1].Value);
             Assert.Single(featureInstance.CallStack[1].Value);
             Assert.Equal(15, featureInstance.CallStack[1].Value[0]);
-            output.Verify(o => o.WriteLine($"{step2Text}: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"And {step2Text}: PASSED"), Times.Once);
 
             Assert.Equal(nameof(FeatureWithScenarioSteps.ScenarioStep3), featureInstance.CallStack[2].Key);
             Assert.Null(featureInstance.CallStack[2].Value);
-            output.Verify(o => o.WriteLine($"{step3Text}: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"When {step3Text}: PASSED"), Times.Once);
 
             Assert.Equal(nameof(FeatureWithScenarioSteps.ScenarioStep4), featureInstance.CallStack[3].Key);
             Assert.NotNull(featureInstance.CallStack[3].Value);
             Assert.Single(featureInstance.CallStack[3].Value);
             Assert.Equal(27, featureInstance.CallStack[3].Value[0]);
-            output.Verify(o => o.WriteLine($"{step4Text}: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Then {step4Text}: PASSED"), Times.Once);
         }
 
         private static Gherkin.Ast.GherkinDocument CreateGherkinDocument(
-            string scenario, 
+            string scenario,
             string[] steps,
             Gherkin.Ast.StepArgument stepArgument = null)
         {
             return new Gherkin.Ast.GherkinDocument(
-                new Gherkin.Ast.Feature(new Gherkin.Ast.Tag[0], null, null, null, null, null, new Gherkin.Ast.ScenarioDefinition[] 
+                new Gherkin.Ast.Feature(new Gherkin.Ast.Tag[0], null, null, null, null, null, new Gherkin.Ast.ScenarioDefinition[]
                 {
                     new Gherkin.Ast.Scenario(
-                        new Gherkin.Ast.Tag[0], 
-                        null, 
-                        null, 
-                        scenario, 
-                        null, 
-                        steps.Select(s => 
+                        new Gherkin.Ast.Tag[0],
+                        null,
+                        null,
+                        scenario,
+                        null,
+                        steps.Select(s =>
                         {
                             var spaceIndex = s.IndexOf(' ');
                             return new Gherkin.Ast.Step(
-                                null, 
-                                s.Substring(0, spaceIndex).Trim(), 
-                                s.Substring(spaceIndex).Trim(), 
+                                null,
+                                s.Substring(0, spaceIndex).Trim(),
+                                s.Substring(spaceIndex).Trim(),
                                 stepArgument);
                         }).ToArray())
                 }),
@@ -217,34 +210,29 @@ namespace UnitTests
         public async Task ExecuteScenario_Executes_Successful_Scenario_Steps_And_Skips_The_Rest()
         {
             //arrange.
-            var step1Text = "Given " + FeatureWithScenarioSteps_And_Throwing.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase);
-            var step2Text = "And " + FeatureWithScenarioSteps_And_Throwing.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase);
-            var step3Text = "When " + FeatureWithScenarioSteps_And_Throwing.ScenarioStep3Text;
-            var step4Text = "Then " + FeatureWithScenarioSteps_And_Throwing.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase);
-            var featureFilePath = $"{nameof(FeatureWithScenarioSteps_And_Throwing)}.feature";
+            var step1Text = FeatureWithScenarioSteps_And_Throwing.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase);
+            var step2Text = FeatureWithScenarioSteps_And_Throwing.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase);
+            var step3Text = FeatureWithScenarioSteps_And_Throwing.ScenarioStep3Text;
+            var step4Text = FeatureWithScenarioSteps_And_Throwing.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase);
 
             var scenarioName = "scenario 12345";
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(CreateGherkinDocument(scenarioName,
-                    new string[] 
-                    {
-                        step1Text,
-                        step2Text,
-                        step3Text,
-                        step4Text
-                    })))
-                .Verifiable();
 
             var featureInstance = new FeatureWithScenarioSteps_And_Throwing();
             var output = new Mock<ITestOutputHelper>();
             featureInstance.InternalOutput = output.Object;
 
+            var testScenario = new TestScenario("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, step1Text),
+                new(TestStepType.And, step2Text),
+                new(TestStepType.When, step3Text),
+                new(TestStepType.Then, step4Text)
+            ]);
+
             //act.
-            var exceptiion = await Assert.ThrowsAsync<TargetInvocationException>(async () => await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath));
+            var exceptiion = await Assert.ThrowsAsync<TargetInvocationException>(async () => await _sut.ExecuteScenarioAsync(featureInstance, testScenario));
             Assert.IsType<InvalidOperationException>(exceptiion.InnerException);
 
             //assert.
-            _featureFileRepository.Verify();
 
             Assert.Equal(2, featureInstance.CallStack.Count);
 
@@ -252,17 +240,17 @@ namespace UnitTests
             Assert.NotNull(featureInstance.CallStack[0].Value);
             Assert.Single(featureInstance.CallStack[0].Value);
             Assert.Equal(12, featureInstance.CallStack[0].Value[0]);
-            output.Verify(o => o.WriteLine($"{step1Text}: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Given {step1Text}: PASSED"), Times.Once);
 
             Assert.Equal(nameof(FeatureWithScenarioSteps_And_Throwing.ScenarioStep2), featureInstance.CallStack[1].Key);
             Assert.NotNull(featureInstance.CallStack[1].Value);
             Assert.Single(featureInstance.CallStack[1].Value);
             Assert.Equal(15, featureInstance.CallStack[1].Value[0]);
-            output.Verify(o => o.WriteLine($"{step2Text}: FAILED"), Times.Once);
+            output.Verify(o => o.WriteLine($"And {step2Text}: FAILED"), Times.Once);
 
-            output.Verify(o => o.WriteLine($"{step3Text}: SKIPPED"), Times.Once);
+            output.Verify(o => o.WriteLine($"When {step3Text}: SKIPPED"), Times.Once);
 
-            output.Verify(o => o.WriteLine($"{step4Text}: SKIPPED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Then {step4Text}: SKIPPED"), Times.Once);
         }
 
         private sealed class FeatureWithScenarioSteps_And_Throwing : Feature
@@ -352,72 +340,61 @@ namespace UnitTests
             }
         }
 
-		[Fact]
-		public async Task ExecuteScenario_Executes_Background_Steps_First()
-		{
-			var gherkinFeaure = new GherkinFeatureBuilder()
-				.WithBackground(sb => sb
-					.Given("given background", null)
-					.When("when background", null)
-					.Then("then background", null))
-				.WithScenario("test scenario", sb => sb
-					.Then("step one", null))
-				.Build();
+        [Fact]
+        public async Task ExecuteScenario_Executes_Background_Steps_First()
+        {
+            var featureInstance = new FeatureWithBackgroundSteps();
+            var output = new Mock<ITestOutputHelper>();
+            featureInstance.InternalOutput = output.Object;
 
-			var gherkinDocument = new Gherkin.Ast.GherkinDocument(gherkinFeaure, new Gherkin.Ast.Comment[0]);
+            var testScenario = new TestScenario("feature", "test scenario", CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, "given background"),
+                new(TestStepType.When, "when background"),
+                new(TestStepType.Then, "then background"),
+                new(TestStepType.Then, "step one")
+            ]);
 
-            var featurePath = $"{nameof(FeatureWithBackgroundSteps)}.feature";
-
-			_featureFileRepository.Setup(r => r.GetByFilePath(featurePath))
-				.Returns(new FeatureFile(gherkinDocument))
-				.Verifiable();
-
-			var featureInstance = new FeatureWithBackgroundSteps();
-			var output = new Mock<ITestOutputHelper>();
-			featureInstance.InternalOutput = output.Object;
-
-			//act.
-			await _sut.ExecuteScenarioAsync(featureInstance, "test scenario", featurePath);
+            //act.
+            await _sut.ExecuteScenarioAsync(featureInstance, testScenario);
 
             //assert.
-            _featureFileRepository.Verify();
-			Assert.Equal("abcd", featureInstance.OrderValidator);
-			output.Verify(o => o.WriteLine($"Given given background: PASSED"), Times.Once);
-			output.Verify(o => o.WriteLine($"When when background: PASSED"), Times.Once);
-			output.Verify(o => o.WriteLine($"Then then background: PASSED"), Times.Once);
-			output.Verify(o => o.WriteLine($"Then step one: PASSED"), Times.Once);
-		}
+            Assert.Equal("abcd", featureInstance.OrderValidator);
+            output.Verify(o => o.WriteLine($"Given given background: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"When when background: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Then then background: PASSED"), Times.Once);
+            output.Verify(o => o.WriteLine($"Then step one: PASSED"), Times.Once);
+        }
 
-		private sealed class FeatureWithBackgroundSteps : Feature
-		{
-			public string OrderValidator = String.Empty;
+        private sealed class FeatureWithBackgroundSteps : Feature
+        {
+            public string OrderValidator = String.Empty;
 
-			[Given("given background")]
-			public void GivenBackground()
-			{
-				OrderValidator += "a";
-			}
+            [Given("given background")]
+            public void GivenBackground()
+            {
+                OrderValidator += "a";
+            }
 
-			[When("when background")]
-			public void WhenBackground()
-			{
-				OrderValidator += "b";
-			}
+            [When("when background")]
+            public void WhenBackground()
+            {
+                OrderValidator += "b";
+            }
 
-			[Then("then background")]
-			public void ThenBackground()
-			{
-				OrderValidator += "c";
-			}
+            [Then("then background")]
+            public void ThenBackground()
+            {
+                OrderValidator += "c";
+            }
 
-			[Then("step one")]
-			public void ThenScenario()
-			{
-				OrderValidator += "d";
-			}
-		}
+            [Then("step one")]
+            public void ThenScenario()
+            {
+                OrderValidator += "d";
+            }
+        }
 
-		[Fact]
+        [Fact]
         public async Task ExecuteScenario_Executes_ScenarioStep_With_DataTable()
         {
             //arrange.
@@ -425,43 +402,38 @@ namespace UnitTests
             var featureInstance = new FeatureWithDataTableScenarioStep();
             var output = new Mock<ITestOutputHelper>();
             featureInstance.InternalOutput = output.Object;
-            var featureFilePath = $"{nameof(FeatureWithDataTableScenarioStep)}.feature";
 
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(CreateGherkinDocument(scenarioName,
-                    new string[] 
-                    {
-                        "When " + FeatureWithDataTableScenarioStep.Steptext
-                    },
-                    new Gherkin.Ast.DataTable(new Gherkin.Ast.TableRow[]
-                    {
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "First argument"),
-                            new Gherkin.Ast.TableCell(null, "Second argument"),
-                            new Gherkin.Ast.TableCell(null, "Result"),
-                        }),
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "1"),
-                            new Gherkin.Ast.TableCell(null, "2"),
-                            new Gherkin.Ast.TableCell(null, "3"),
-                        }),
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "a"),
-                            new Gherkin.Ast.TableCell(null, "b"),
-                            new Gherkin.Ast.TableCell(null, "c"),
-                        })
-                    }))))
-                .Verifiable();
-            
             //act.
-            await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath);
+            await _sut.ExecuteScenarioAsync(featureInstance, new("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.When, FeatureWithDataTableScenarioStep.Steptext, new TestStepTableArgument([
+                    new(
+                        [
+                            new("First argument", null),
+                            new("Second argument", null),
+                            new("Result", null)
+                        ],
+                        null
+                    ),
+                    new(
+                        [
+                            new("1", null),
+                            new("2", null),
+                            new("3", null)
+                        ],
+                        null
+                    ),
+                    new(
+                        [
+                            new("a", null),
+                            new("b", null),
+                            new("c", null)
+                        ],
+                        null
+                    )
+                ]))
+            ]));
 
             //assert.
-            _featureFileRepository.Verify();
-
             Assert.NotNull(featureInstance.ReceivedDataTable);
             Assert.Equal(3, featureInstance.ReceivedDataTable.Rows.Count());
 
@@ -513,19 +485,13 @@ namespace UnitTests
 "---" + Environment.NewLine +
 "in it";
             var scenarioName = "scenario 1231121";
-            var featureFilePath = nameof(FeatureWithDocStringScenarioStep) + ".feature";
-
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(CreateGherkinDocument(scenarioName,
-                    new string[] { "Given " + FeatureWithDocStringScenarioStep.StepWithDocStringText },
-                    new Gherkin.Ast.DocString(null, null, docStringContent))))
-                .Verifiable();
 
             //act.
-            await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath);
+            await _sut.ExecuteScenarioAsync(featureInstance, new("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, FeatureWithDocStringScenarioStep.StepWithDocStringText, new TestStepDocStringArgument(docStringContent, null, null))
+            ]));
 
             //assert.
-            _featureFileRepository.Verify();
 
             Assert.NotNull(featureInstance.ReceivedDocString);
             Assert.Equal(docStringContent, featureInstance.ReceivedDocString.Content);
@@ -553,22 +519,19 @@ namespace UnitTests
             var featureInstance = new FeatureWithSharedStepMethod();
             var output = new Mock<ITestOutputHelper>();
             featureInstance.InternalOutput = output.Object;
-            var featureFilePath = nameof(FeatureWithSharedStepMethod) + ".feature";
 
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(CreateGherkinDocument(scenarioName, new string[]
-                {
-                    "Given I chose 1 as first number",
-                    "And I chose 2 as second number",
-                    "And I chose 3 as third number",
-                    "When I choose 4 as fourth number",
-                    "And I choose 5 as fifth number",
-                    "And I choose 6 as sixth number",
-                    $"Then Result should be {1+2+3+4+5+6} on the screen"
-                })));
+            var testScenario = new TestScenario("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, "I chose 1 as first number"),
+                new(TestStepType.And, "I chose 2 as second number"),
+                new(TestStepType.And, "I chose 3 as third number"),
+                new(TestStepType.When, "I choose 4 as fourth number"),
+                new(TestStepType.And, "I choose 5 as fifth number"),
+                new(TestStepType.And, "I choose 6 as sixth number"),
+                new(TestStepType.Then, $"Result should be {1+2+3+4+5+6} on the screen")
+            ]);
 
             //act.
-            await _sut.ExecuteScenarioAsync(featureInstance, scenarioName, featureFilePath);
+            await _sut.ExecuteScenarioAsync(featureInstance, testScenario);
 
             //assert.
             Assert.Equal(7, featureInstance.CallStack.Count);
@@ -616,25 +579,18 @@ namespace UnitTests
         public async Task ExecuteScenario_Executes_Scenario_With_Star_Notation()
         {
             //arrange.
-            var gherkinFeature = new GherkinFeatureBuilder()
-                .WithScenario("S", steps => steps.Star("I have some cukes", null))
-                .Build();
-            var featureFilePath = $"{nameof(FeatureWithStarNotation)}.feature";
-            
-            _featureFileRepository.Setup(r => r.GetByFilePath(featureFilePath))
-                .Returns(new FeatureFile(new Gherkin.Ast.GherkinDocument(gherkinFeature, null)))
-                .Verifiable();
-
             var featureInstance = new FeatureWithStarNotation();
             var output = new Mock<ITestOutputHelper>();
             featureInstance.InternalOutput = output.Object;
 
+            var testScenario = new TestScenario("feature", "S", CultureInfo.InvariantCulture, [], [
+                new(TestStepType.All, "I have some cukes")
+            ]);
+
             //act.
-            await _sut.ExecuteScenarioAsync(featureInstance, "S", featureFilePath);
+            await _sut.ExecuteScenarioAsync(featureInstance, testScenario);
 
             //assert.
-            _featureFileRepository.Verify();
-
             Assert.Single(featureInstance.CallStack);
             Assert.Equal(nameof(FeatureWithStarNotation.I_Have_Some_Cukes), featureInstance.CallStack[0].Key);
         }
@@ -654,13 +610,14 @@ namespace UnitTests
         public async Task ExecuteScenario_DoesNotAllow_AsyncVoid_Steps()
         {
             //arrange.
-            var featureFilePath = "/some/valid/path";
             var feature = new FeatureWithAsyncVoidStep();
             var output = new Mock<ITestOutputHelper>();
             feature.InternalOutput = output.Object;
 
+            var testScenario = new TestScenario("feature", "S", CultureInfo.InvariantCulture, [], []);
+
             //act / assert.
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await _sut.ExecuteScenarioAsync(feature, "S", featureFilePath));
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await _sut.ExecuteScenarioAsync(feature, testScenario));
         }
 
         private sealed class FeatureWithAsyncVoidStep : Feature

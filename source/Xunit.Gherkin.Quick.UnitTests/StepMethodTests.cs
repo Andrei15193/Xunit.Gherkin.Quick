@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -13,7 +14,7 @@ namespace UnitTests
             //arrange.
             var featureInstance = new Feature_For_ExecuteAsync_Test();
             var stepMethodInfo = StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(Feature_For_ExecuteAsync_Test.But_This_Method)), featureInstance);
-            var sut = StepMethod.FromStepMethodInfo(stepMethodInfo, new Gherkin.Ast.Step(null, "But", "what 123 exactly", null));
+            var sut = StepMethod.FromStepMethodInfo(stepMethodInfo, new TestStep(TestStepType.But, "what 123 exactly"));
 
             //act.
             await sut.ExecuteAsync();
@@ -38,9 +39,9 @@ namespace UnitTests
         }
 
         [Theory]
-        [InlineData("Given")]
-        [InlineData("*")]
-        public void FromStepMethodInfo_Creates_Instance_When_Step_Matches(string keyword)
+        [InlineData(TestStepType.Given)]
+        [InlineData(TestStepType.All)]
+        public void FromStepMethodInfo_Creates_Instance_When_Step_Matches(TestStepType stepType)
         {
             //arrange.
             var featureInstance = new Feature_For_FromStepMethodInfo();
@@ -50,11 +51,11 @@ namespace UnitTests
                 );
 
             //act.
-            var sut = StepMethod.FromStepMethodInfo(stepMethodInfo, new Gherkin.Ast.Step(null, keyword, "something 123 else", null));
+            var sut = StepMethod.FromStepMethodInfo(stepMethodInfo, new TestStep(stepType, "something 123 else"));
 
             //assert.
             Assert.NotNull(sut);
-            Assert.Equal(stepMethodInfo.ScenarioStepPatterns[1].Kind, sut.Kind);
+            Assert.Equal(stepMethodInfo.ScenarioStepPatterns[1].Type, sut.Type);
             Assert.Equal(stepMethodInfo.ScenarioStepPatterns[1].OriginalPattern, sut.Pattern);
             Assert.Equal("something 123 else", sut.StepText);
         }
@@ -80,7 +81,7 @@ namespace UnitTests
                 );
 
             //act / assert.
-            Assert.Throws<InvalidOperationException>(() => StepMethod.FromStepMethodInfo(stepMethodInfo, new Gherkin.Ast.Step(null, "Given", "something else NOT", null)));
+            Assert.Throws<InvalidOperationException>(() => StepMethod.FromStepMethodInfo(stepMethodInfo, new TestStep(TestStepType.Given, "something else NOT")));
         }
     }
 }

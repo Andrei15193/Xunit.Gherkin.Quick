@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Gherkin.Ast;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -30,6 +31,10 @@ namespace Xunit.Gherkin.Quick
 
         public abstract StepMethodArgument Clone();
 
-        public abstract void DigestScenarioStepValues(string[] argumentValues, StepArgument gherkinStepArgument);
+        public abstract void DigestScenarioStepValues(string[] argumentValues, TestStepDocStringArgument docStringArgument);
+
+        public abstract void DigestScenarioStepValues(string[] argumentValues, TestStepTableArgument tableArgument);
+
+        public abstract void DigestScenarioStepValues(string[] argumentValues);
     }
 }

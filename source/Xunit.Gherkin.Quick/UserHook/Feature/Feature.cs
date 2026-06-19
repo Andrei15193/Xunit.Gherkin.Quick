@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Xunit.Abstractions;
-using Xunit.Gherkin.Quick.Evaluators;
 using Xunit.Gherkin.Quick.Hooks;
 using Xunit.Gherkin.Quick.TestScenarios;
-using Xunit.Sdk;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -19,41 +16,13 @@ namespace Xunit.Gherkin.Quick
     /// </summary>
     public abstract class Feature : FeatureBase
     {
-        /// <summary>
-        /// Gets the scenario currently being tested.
-        /// </summary>
-        public TestScenario TestScenario { get; private set; }
-
-        /// <summary>
-        /// Gets the step currently being evaluated.
-        /// </summary>
-        public TestStep TestStep { get; private set; }
-
         [TestScenario]
         internal async Task Scenario(ITestOutputHelper testOutputHelper, TestScenario testScenario)
         {
-            var featureEvaluator = new FeatureEvaluator(this);
+            InternalOutput = testOutputHelper;
+            var featureEvaluator = new ScenarioExecutor();
 
-            TestScenario = testScenario;
-            using (var testStep = testScenario.Steps.GetEnumerator())
-                while (testStep.MoveNext())
-                    try
-                    {
-                        await featureEvaluator.EvaluateStepAsync(testStep.Current);
-                        testOutputHelper.WriteLine($"{testStep.Current.Text}: PASSED");
-                    }
-                    catch (Exception exception)
-                    {
-                        testOutputHelper.WriteLine($"{testStep.Current.Text}: FAILED");
-
-                        while (testStep.MoveNext())
-                            testOutputHelper.WriteLine($"{testStep.Current.Text}: SKIPPED");
-
-                        if (exception is XunitException)
-                            throw;
-                        else
-                            throw new TestScenarioException("An unhandled exception was thrown while evaluating the scenario.", exception);
-                    }
+            await featureEvaluator.ExecuteScenarioAsync(this, testScenario);
         }
     }
 }

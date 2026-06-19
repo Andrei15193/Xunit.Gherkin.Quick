@@ -1,5 +1,6 @@
 ﻿using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -9,34 +10,28 @@ namespace UnitTests
         {
             get
             {
-                return new object[][] 
-                {
-                    new object[]
-                    {
+                return [
+                    [
                         new GivenAttribute("123"),
-                        PatternKind.Given
-                    },
-                    new object[]
-                    {
+                        TestStepType.Given
+                    ],
+                    [
                         new WhenAttribute("123"),
-                        PatternKind.When
-                    },
-                    new object[]
-                    {
+                        TestStepType.When
+                    ],
+                    [
                         new ThenAttribute("123"),
-                        PatternKind.Then
-                    },
-                    new object[]
-                    {
+                        TestStepType.Then
+                    ],
+                    [
                         new AndAttribute("123"),
-                        PatternKind.And
-                    },
-                    new object[]
-                    {
+                        TestStepType.And
+                    ],
+                    [
                         new ButAttribute("123"),
-                        PatternKind.But
-                    }
-                };
+                        TestStepType.But
+                    ]
+                ];
             }
         }
 
@@ -44,39 +39,14 @@ namespace UnitTests
         [MemberData(nameof(AllStepDefinitionAttributes))]
         internal void ToStepMethodKind_Converts_based_on_Attribute_type(
             BaseStepDefinitionAttribute attribute,
-            PatternKind kind
-            )
+            TestStepType type
+        )
         {
             //act.
-            var actualKind = PatternKindExtensions.ToPatternKind(attribute);
+            var actualType = PatternKindExtensions.ToTestStepType(attribute);
 
             //assert.
-            Assert.Equal(kind, actualKind);
-        }
-
-        [Theory]
-        [InlineData(PatternKind.Given, "Given", true)]
-        [InlineData(PatternKind.Given, "And", false)]
-        [InlineData(PatternKind.Given, "*", true)]
-        [InlineData(PatternKind.When, "When", true)]
-        [InlineData(PatternKind.When, "Given", false)]
-        [InlineData(PatternKind.When, "*", true)]
-        [InlineData(PatternKind.Then, "Then", true)]
-        [InlineData(PatternKind.Then, "But", false)]
-        [InlineData(PatternKind.Then, "*", true)]
-        [InlineData(PatternKind.And, "And", true)]
-        [InlineData(PatternKind.And, "Given", false)]
-        [InlineData(PatternKind.And, "*", true)]
-        internal void Match_Is_Comparing_With_String_Keyword(
-            PatternKind patternKind,
-            string keyword,
-            bool expectedMatch)
-        {
-            //act.
-            var actualMatch = patternKind.Matches(keyword);
-
-            //assert.
-            Assert.Equal(expectedMatch, actualMatch);
+            Assert.Equal(type, actualType);
         }
     }
 }

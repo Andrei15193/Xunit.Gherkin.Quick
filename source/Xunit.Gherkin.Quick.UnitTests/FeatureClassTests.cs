@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -70,17 +72,14 @@ namespace UnitTests
             var scenarioName = "some scenario name 123";
             var featureInstance = new FeatureWithMatchingScenarioStepsToExtract();
             var sut = FeatureClass.FromFeatureInstance(featureInstance);
-            var gherkinScenario = CreateGherkinDocument(scenarioName,
-                new string[]
-                {
-                    "Given " + FeatureWithMatchingScenarioStepsToExtract.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase),
-                    "And " + FeatureWithMatchingScenarioStepsToExtract.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase),
-                    "When " + FeatureWithMatchingScenarioStepsToExtract.ScenarioStep3Text,
-                    "Then " + FeatureWithMatchingScenarioStepsToExtract.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase)
-                }).Feature.Children.First() as Gherkin.Ast.Scenario;
 
             //act.
-            var scenario = sut.ExtractScenario(gherkinScenario);
+            var scenario = sut.ExtractScenario(new("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, FeatureWithMatchingScenarioStepsToExtract.ScenarioStep1Text.Replace(@"(\d+)", "12", StringComparison.InvariantCultureIgnoreCase)),
+                new(TestStepType.And, FeatureWithMatchingScenarioStepsToExtract.ScenarioStep2Text.Replace(@"(\d+)", "15", StringComparison.InvariantCultureIgnoreCase)),
+                new(TestStepType.When, FeatureWithMatchingScenarioStepsToExtract.ScenarioStep3Text),
+                new(TestStepType.Then, FeatureWithMatchingScenarioStepsToExtract.ScenarioStep4Text.Replace(@"(\d+)", "27", StringComparison.InvariantCultureIgnoreCase))
+            ]));
 
             //assert.
             Assert.NotNull(scenario);
@@ -235,35 +234,37 @@ namespace UnitTests
             var featureInstance = new FeatureWithDataTableScenarioStep();
             var sut = FeatureClass.FromFeatureInstance(featureInstance);
 
-            var gherknScenario = CreateGherkinDocument(scenarioName,
-                    new string[]
-                    {
-                        "When " + FeatureWithDataTableScenarioStep.Steptext
-                    },
-                    new Gherkin.Ast.DataTable(new Gherkin.Ast.TableRow[]
-                    {
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "First argument"),
-                            new Gherkin.Ast.TableCell(null, "Second argument"),
-                            new Gherkin.Ast.TableCell(null, "Result"),
-                        }),
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "1"),
-                            new Gherkin.Ast.TableCell(null, "2"),
-                            new Gherkin.Ast.TableCell(null, "3"),
-                        }),
-                        new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                        {
-                            new Gherkin.Ast.TableCell(null, "a"),
-                            new Gherkin.Ast.TableCell(null, "b"),
-                            new Gherkin.Ast.TableCell(null, "c"),
-                        })
-                    })).Feature.Children.First() as Gherkin.Ast.Scenario;
+            var testScenario = new TestScenario("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.When, FeatureWithDataTableScenarioStep.Steptext, new TestStepTableArgument([
+                    new TestStepTableRowArgument(
+                        [
+                            new("First argument", null),
+                            new("Second argument", null),
+                            new("Result", null)
+                        ],
+                        null
+                    ),
+                    new TestStepTableRowArgument(
+                        [
+                            new("1", null),
+                            new("2", null),
+                            new("3", null)
+                        ],
+                        null
+                    ),
+                    new TestStepTableRowArgument(
+                        [
+                            new("a", null),
+                            new("b", null),
+                            new("c", null)
+                        ],
+                        null
+                    )
+                ]))
+            ]);
 
             //act.
-            var scenario = sut.ExtractScenario(gherknScenario);
+            var scenario = sut.ExtractScenario(testScenario);
 
             //assert.
             Assert.NotNull(scenario);
@@ -294,13 +295,12 @@ namespace UnitTests
     with multi lines
     ---
     in it";
-            var gherkinScenario = CreateGherkinDocument(scenarioName,
-                    new string[] { "Given " + FeatureWithDocStringScenarioStep.StepWithDocStringText },
-                    new Gherkin.Ast.DocString(null, null, docStringContent))
-                    .Feature.Children.First() as Gherkin.Ast.Scenario;
+            var testScenario = new TestScenario("feature", scenarioName, CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, FeatureWithDocStringScenarioStep.StepWithDocStringText, new TestStepDocStringArgument(docStringContent, null, null))
+            ]);
 
             //act.
-            var scenario = sut.ExtractScenario(gherkinScenario);
+            var scenario = sut.ExtractScenario(testScenario);
 
             //assert.
             Assert.NotNull(scenario);
@@ -324,12 +324,12 @@ namespace UnitTests
         {
             //arrange.
             var sut = FeatureClass.FromFeatureInstance(new FeatureWithMultipleStepPatterns());
+            var testScenario = new TestScenario("feature", "scenario 123", CultureInfo.InvariantCulture, [], [
+                new(TestStepType.Given, "something else")
+            ]);
 
             //act.
-            var scenario = sut.ExtractScenario(CreateGherkinDocument("scenario 123", new string[]
-            {
-                "Given something else"
-            }).Feature.Children.OfType<Gherkin.Ast.Scenario>().First());
+            var scenario = sut.ExtractScenario(testScenario);
 
             //assert.
             Assert.NotNull(scenario);

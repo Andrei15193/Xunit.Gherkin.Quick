@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -19,9 +20,9 @@ namespace Xunit.Gherkin.Quick
         /// </summary>
         public string RegexPattern { get { return _regexPattern; } }
 
-        public PatternKind Kind { get; }
+        public TestStepType Type { get; }
 
-        public ScenarioStepPattern(string pattern, string regexPattern, PatternKind stepMethodKind)
+        public ScenarioStepPattern(string pattern, string regexPattern, TestStepType stepMethodKind)
         {
             _originalPattern = !string.IsNullOrWhiteSpace(pattern) 
                 ? pattern 
@@ -29,7 +30,7 @@ namespace Xunit.Gherkin.Quick
             _regexPattern = !string.IsNullOrWhiteSpace(regexPattern)
                 ? regexPattern
                 : throw new ArgumentNullException(nameof(regexPattern));
-            Kind = stepMethodKind;
+            Type = stepMethodKind;
         }
 
         private static string ConvertSpecialPatternsToRegex(string pattern)
@@ -48,7 +49,7 @@ namespace Xunit.Gherkin.Quick
                 new ScenarioStepPattern(
                     attribute.Pattern,
                     ConvertSpecialPatternsToRegex(attribute.Pattern),
-                    PatternKindExtensions.ToPatternKind(attribute)))
+                    PatternKindExtensions.ToTestStepType(attribute)))
                 .ToList();
         }
     }

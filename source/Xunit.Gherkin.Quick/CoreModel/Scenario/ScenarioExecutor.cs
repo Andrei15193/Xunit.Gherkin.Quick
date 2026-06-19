@@ -1,38 +1,22 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
     internal sealed class ScenarioExecutor
     {
-        private readonly IFeatureFileRepository _featureFileRepository;
-
-        public ScenarioExecutor(IFeatureFileRepository featureFileRepository)
+        public async Task ExecuteScenarioAsync(Feature featureInstance, TestScenario testScenario)
         {
-            _featureFileRepository = featureFileRepository ?? throw new ArgumentNullException(nameof(featureFileRepository));
-        }
-
-        public async Task ExecuteScenarioAsync(Feature featureInstance, string scenarioName, string featureFilePath)
-        {
-            if (featureInstance == null)
+            if (featureInstance is null)
                 throw new ArgumentNullException(nameof(featureInstance));
 
-            if (string.IsNullOrWhiteSpace(scenarioName))
-                throw new ArgumentNullException(nameof(scenarioName));
+            if (testScenario is null)
+                throw new ArgumentNullException(nameof(testScenario));
 
             var featureClass = FeatureClass.FromFeatureInstance(featureInstance);
-            var featureFile = _featureFileRepository.GetByFilePath(featureFilePath);
-            
-            var gherkinScenario = featureFile.GetScenario(scenarioName);                
 
-            if (gherkinScenario == null)
-                throw new InvalidOperationException($"Cannot find scenario `{scenarioName}`.");
-
-            var gherkinBackground = featureFile.GetBackground();
-            if (gherkinBackground != null)
-                gherkinScenario = gherkinScenario.ApplyBackground(gherkinBackground);
-			
-			var scenario = featureClass.ExtractScenario(gherkinScenario);
+            var scenario = featureClass.ExtractScenario(testScenario);
             await scenario.ExecuteAsync(new ScenarioOutput(featureInstance.InternalOutput));
         }
     }

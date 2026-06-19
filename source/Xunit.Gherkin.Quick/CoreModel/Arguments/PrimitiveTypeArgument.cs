@@ -1,13 +1,12 @@
-﻿using Gherkin.Ast;
-using System;
+﻿using System;
 using System.Reflection;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
     internal sealed class PrimitiveTypeArgument : StepMethodArgument
     {
         private readonly ParameterInfo _parameterInfo;
-
         private readonly int _index;
 
         public PrimitiveTypeArgument(ParameterInfo parameterInfo, int index)
@@ -17,11 +16,15 @@ namespace Xunit.Gherkin.Quick
         }
 
         public override StepMethodArgument Clone()
-        {
-            return new PrimitiveTypeArgument(_parameterInfo, _index);
-        }
+            => new PrimitiveTypeArgument(_parameterInfo, _index);
 
-        public override void DigestScenarioStepValues(string[] argumentValues, StepArgument gherkinStepArgument)
+        public override void DigestScenarioStepValues(string[] argumentValues, TestStepDocStringArgument docStringArgument)
+            => DigestScenarioStepValues(argumentValues);
+
+        public override void DigestScenarioStepValues(string[] argumentValues, TestStepTableArgument tableArgument)
+            => DigestScenarioStepValues(argumentValues);
+
+        public override void DigestScenarioStepValues(string[] argumentValues)
         {
             if (argumentValues.Length <= _index)
                 throw new InvalidOperationException($"Cannot extract value for parameter `{_parameterInfo.Name}` at index {_index}; only {argumentValues.Length} parameters were provided. Method `{_parameterInfo.Member.Name}`.");
@@ -30,10 +33,6 @@ namespace Xunit.Gherkin.Quick
         }
 
         public override bool IsSameAs(StepMethodArgument other)
-        {
-            return other is PrimitiveTypeArgument otherPrimitive
-                ? otherPrimitive._index == _index
-                : false;
-        }
+            => other is PrimitiveTypeArgument otherPrimitive && otherPrimitive._index == _index;
     }
 }

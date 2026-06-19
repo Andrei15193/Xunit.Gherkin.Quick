@@ -2,6 +2,7 @@
 using System;
 using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -14,7 +15,7 @@ namespace UnitTests
             var sut = new DataTableArgument();
 
             //act / assert.
-            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(new string[0], null));
+            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues([], (TestStepTableArgument)null));
         }
 
         [Fact]
@@ -24,7 +25,7 @@ namespace UnitTests
             var sut = new DataTableArgument();
 
             //act / assert.
-            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(new string[] { "1", "2", "3" }, null));
+            Assert.Throws<InvalidOperationException>(() => sut.DigestScenarioStepValues(["1", "2", "3"], (TestStepTableArgument)null));
         }
 
         [Fact]
@@ -32,30 +33,35 @@ namespace UnitTests
         {
             //arrange.
             var sut = new DataTableArgument();
-            var dataTable = new Gherkin.Ast.DataTable(new Gherkin.Ast.TableRow[]
-                {
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "First argument"),
-                        new Gherkin.Ast.TableCell(null, "Second argument"),
-                        new Gherkin.Ast.TableCell(null, "Result"),
-                    }),
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "1"),
-                        new Gherkin.Ast.TableCell(null, "2"),
-                        new Gherkin.Ast.TableCell(null, "3"),
-                    }),
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "a"),
-                        new Gherkin.Ast.TableCell(null, "b"),
-                        new Gherkin.Ast.TableCell(null, "c"),
-                    })
-                });
+            var dataTable = new TestStepTableArgument([
+                new(
+                    [
+                        new("First argument", null),
+                        new("Second argument", null),
+                        new("Result", null)
+                    ],
+                    null
+                ),
+                new(
+                    [
+                        new("1", null),
+                        new("2", null),
+                        new("3", null)
+                    ],
+                    null
+                ),
+                new(
+                    [
+                        new("a", null),
+                        new("b", null),
+                        new("c", null)
+                    ],
+                    null
+                )
+            ]);
 
             //act.
-            sut.DigestScenarioStepValues(new string[0], dataTable);
+            sut.DigestScenarioStepValues([], dataTable);
 
             //assert.
             Assert.Same(dataTable, sut.Value);
@@ -66,30 +72,35 @@ namespace UnitTests
         {
             //arrange.
             var sut = new DataTableArgument();
-            var dataTable = new Gherkin.Ast.DataTable(new Gherkin.Ast.TableRow[]
-                {
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "First argument"),
-                        new Gherkin.Ast.TableCell(null, "Second argument"),
-                        new Gherkin.Ast.TableCell(null, "Result"),
-                    }),
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "1"),
-                        new Gherkin.Ast.TableCell(null, "2"),
-                        new Gherkin.Ast.TableCell(null, "3"),
-                    }),
-                    new Gherkin.Ast.TableRow(null, new Gherkin.Ast.TableCell[]
-                    {
-                        new Gherkin.Ast.TableCell(null, "a"),
-                        new Gherkin.Ast.TableCell(null, "b"),
-                        new Gherkin.Ast.TableCell(null, "c"),
-                    })
-                });
+            var dataTable = new TestStepTableArgument([
+                new(
+                    [
+                        new("First argument", null),
+                        new("Second argument", null),
+                        new("Result", null)
+                    ],
+                    null
+                ),
+                new(
+                    [
+                        new("1", null),
+                        new("2", null),
+                        new("3", null)
+                    ],
+                    null
+                ),
+                new(
+                    [
+                        new("a", null),
+                        new("b", null),
+                        new("c", null)
+                    ],
+                    null
+                )
+            ]);
 
             //act.
-            sut.DigestScenarioStepValues(new string[] { "1", "2", "3" }, dataTable);
+            sut.DigestScenarioStepValues(["1", "2", "3"], dataTable);
 
             //assert.
             Assert.Same(dataTable, sut.Value);

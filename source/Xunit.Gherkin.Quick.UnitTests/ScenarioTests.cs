@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Gherkin.Quick;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace UnitTests
 {
@@ -39,10 +40,10 @@ namespace UnitTests
 
             var sut = new Scenario(new List<StepMethod>
             {
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep1)), featureInstance), new Gherkin.Ast.Step(null, "Given", FeatureWithStepMethodsToInvoke.ScenarioStep1Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep2)), featureInstance), new Gherkin.Ast.Step(null, "And", FeatureWithStepMethodsToInvoke.ScenarioStep2Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep3)), featureInstance), new Gherkin.Ast.Step(null, "When", FeatureWithStepMethodsToInvoke.ScenarioStep3Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep4)), featureInstance), new Gherkin.Ast.Step(null, "Then", FeatureWithStepMethodsToInvoke.ScenarioStep4Text, null))
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep1)), featureInstance), new(TestStepType.Given, FeatureWithStepMethodsToInvoke.ScenarioStep1Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep2)), featureInstance), new(TestStepType.And, FeatureWithStepMethodsToInvoke.ScenarioStep2Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep3)), featureInstance), new(TestStepType.When, FeatureWithStepMethodsToInvoke.ScenarioStep3Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke.ScenarioStep4)), featureInstance), new(TestStepType.Then, FeatureWithStepMethodsToInvoke.ScenarioStep4Text))
             });
 
             var output = new Mock<IScenarioOutput>();
@@ -146,10 +147,10 @@ namespace UnitTests
 
             var sut = new Scenario(new List<StepMethod>
             {
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep1)), featureInstance), new Gherkin.Ast.Step(null, "Given", FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep1Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep2)), featureInstance), new Gherkin.Ast.Step(null, "And", FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep2Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep3)), featureInstance), new Gherkin.Ast.Step(null, "When", FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep3Text, null)),
-                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep4)), featureInstance), new Gherkin.Ast.Step(null, "Then", FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep4Text, null))
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep1)), featureInstance), new(TestStepType.Given, FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep1Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep2)), featureInstance), new(TestStepType.And, FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep2Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep3)), featureInstance), new(TestStepType.When, FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep3Text)),
+                StepMethod.FromStepMethodInfo(StepMethodInfo.FromMethodInfo(featureInstance.GetType().GetMethod(nameof(FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep4)), featureInstance), new(TestStepType.Then, FeatureWithStepMethodsToInvoke_And_Throwing.ScenarioStep4Text))
             });
 
             var output = new Mock<IScenarioOutput>();

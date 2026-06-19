@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Gherkin.Ast;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -11,14 +12,14 @@ namespace Xunit.Gherkin.Quick
 
         public string StepText { get; }
 
-        public PatternKind Kind { get; }
+        public TestStepType Type { get; }
 
         public string Pattern { get; }
 
-        private StepMethod(StepMethodInfo stepMethodInfo, PatternKind kind, string pattern, string stepText)
+        private StepMethod(StepMethodInfo stepMethodInfo, TestStepType type, string pattern, string stepText)
         {
             _stepMethodInfo = stepMethodInfo ?? throw new ArgumentNullException(nameof(stepMethodInfo));
-            Kind = kind;
+            Type = type;
             Pattern = !string.IsNullOrWhiteSpace(pattern) ? pattern : throw new ArgumentNullException(nameof(pattern));
 
             StepText = !string.IsNullOrWhiteSpace(stepText)
@@ -27,16 +28,16 @@ namespace Xunit.Gherkin.Quick
 
         }
 
-        public static StepMethod FromStepMethodInfo(StepMethodInfo stepMethodInfo, Step gherkinScenarioStep)
+        public static StepMethod FromStepMethodInfo(StepMethodInfo stepMethodInfo, TestStep testStep)
         {
-            var matchingPattern = stepMethodInfo.GetMatchingPattern(gherkinScenarioStep);
+            var matchingPattern = stepMethodInfo.GetMatchingPattern(testStep);
 
             if (matchingPattern == null)
-                throw new InvalidOperationException($"This step method info (`{stepMethodInfo.GetMethodName()}`) cannot handle given scenario step: `{gherkinScenarioStep.Keyword.Trim()} {gherkinScenarioStep.Text.Trim()}`.");
+                throw new InvalidOperationException($"This step method info (`{stepMethodInfo.GetMethodName()}`) cannot handle given scenario step: `{testStep.Type} {testStep.Text.Trim()}`.");
 
             var stepMethodInfoClone = stepMethodInfo.Clone();
-            stepMethodInfoClone.DigestScenarioStepValues(gherkinScenarioStep);
-            return new StepMethod(stepMethodInfoClone, matchingPattern.Kind, matchingPattern.OriginalPattern, gherkinScenarioStep.Text);
+            stepMethodInfoClone.DigestScenarioStepValues(testStep);
+            return new StepMethod(stepMethodInfoClone, matchingPattern.Type, matchingPattern.OriginalPattern, testStep.Text);
         }
 
         public async Task ExecuteAsync()

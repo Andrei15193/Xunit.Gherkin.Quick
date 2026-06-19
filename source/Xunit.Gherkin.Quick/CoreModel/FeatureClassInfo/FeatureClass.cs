@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -32,31 +33,32 @@ namespace Xunit.Gherkin.Quick
             return new FeatureClass(stepMethods);
         }
 
-		public Scenario ExtractScenario(global::Gherkin.Ast.Scenario scenario)
-		{
-			if (scenario == null)
-				throw new ArgumentNullException(nameof(scenario));
+        public Scenario ExtractScenario(TestScenario scenario)
+        {
+            if (scenario is null)
+                throw new ArgumentNullException(nameof(scenario));
 
             var steps = ExtractSteps(scenario);
-			return new Scenario(steps);
-		}
+            return new Scenario(steps);
+        }
 
-		private List<StepMethod> ExtractSteps(global::Gherkin.Ast.ScenarioDefinition gherkinScenario)
+        private List<StepMethod> ExtractSteps(TestScenario testScenario)
         {
-            if (gherkinScenario == null)
-                throw new ArgumentNullException(nameof(gherkinScenario));
+            if (testScenario is null)
+                throw new ArgumentNullException(nameof(testScenario));
 
-			return gherkinScenario.Steps
-				.Select(gherkingScenarioStep =>
-				{
-					var matchingStepMethodInfo = _stepMethods.FirstOrDefault(stepMethodInfo => stepMethodInfo.Matches(gherkingScenarioStep));
-					if (matchingStepMethodInfo == null)
-						throw new InvalidOperationException($"Cannot match any method with step `{gherkingScenarioStep.Keyword.Trim()} {gherkingScenarioStep.Text.Trim()}`. Scenario `{gherkinScenario.Name}`.");
+            return testScenario
+                .Steps
+                .Select(testScenarioStep =>
+                {
+                    var matchingStepMethodInfo = _stepMethods.FirstOrDefault(stepMethodInfo => stepMethodInfo.Matches(testScenarioStep));
+                    if (matchingStepMethodInfo == null)
+                        throw new InvalidOperationException($"Cannot match any method with step `{testScenarioStep.Type} {testScenarioStep.Text.Trim()}`. Scenario `{testScenario.ScenarioName}`.");
 
-					var stepMethod = StepMethod.FromStepMethodInfo(matchingStepMethodInfo, gherkingScenarioStep);
-					return stepMethod;
-				})
-				.ToList();
+                    var stepMethod = StepMethod.FromStepMethodInfo(matchingStepMethodInfo, testScenarioStep);
+                    return stepMethod;
+                })
+                .ToList();
         }
     }
 }

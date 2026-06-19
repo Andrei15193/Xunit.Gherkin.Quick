@@ -10,12 +10,13 @@ namespace UnitTests.TestScenarios;
 
 public class TestScenarioMapperTests
 {
-    private readonly TestScenarioMapper _testScenarioMapper = new(new GherkinDialectProvider());
+    private readonly TestScenarioMapper _testScenarioMapper = new(new LocaleMatchingGherkinDialectProvider());
 
     [Fact]
     public void Map_MapsBasicInformationAndSteps()
     {
         var testScenario = _ParseTestScenario(@"
+            # language: en-GB
             Feature: this is a feature
             Scenario: this is a scenario
               Given a step
@@ -28,7 +29,7 @@ public class TestScenarioMapperTests
         Assert.Multiple(
             () => Assert.Equal("this is a feature", testScenario.FeatureName),
             () => Assert.Equal("this is a scenario", testScenario.ScenarioName),
-            () => Assert.Equal("en", testScenario.Locale.Name),
+            () => Assert.Equal("en-GB", testScenario.Locale.Name),
             () => Assert.Empty(testScenario.Tags),
             () => Assert.Collection(
                 testScenario.Steps,
@@ -297,11 +298,62 @@ public class TestScenarioMapperTests
     {
         global::Gherkin.Ast.GherkinDocument gherkinDocument;
         using (var contentReader = new StringReader(content))
-            gherkinDocument = new global::Gherkin.Parser().Parse(contentReader);
+            gherkinDocument = new global::Gherkin.Parser().Parse(new TokenScanner(contentReader), new TokenMatcher(new LocaleMatchingGherkinDialectProvider()));
 
         var scenarioDefinition = Assert.Single(gherkinDocument.Feature.Children, scenarioDefinition => scenarioDefinition is global::Gherkin.Ast.Scenario);
         var scenario = Assert.IsType<Scenario>(scenarioDefinition);
 
         return _testScenarioMapper.Map(gherkinDocument.Feature, scenario, arguments);
+    }
+
+    internal class LocaleMatchingGherkinDialectProvider : GherkinDialectProvider
+    {
+        public LocaleMatchingGherkinDialectProvider()
+            : base()
+        {
+        }
+
+        public LocaleMatchingGherkinDialectProvider(string defaultLanguage)
+            : base(defaultLanguage)
+        {
+        }
+
+        protected override GherkinDialect GetDialect(string language, Dictionary<string, GherkinLanguageSetting> gherkinLanguageSettings, Location location)
+        {
+            var gherkinDialect = default(GherkinDialect);
+
+            using (var languageCode = _GetLanguageCodes(language).GetEnumerator())
+                while (languageCode.MoveNext() && gherkinDialect is null)
+                    if (gherkinLanguageSettings.TryGetValue(languageCode.Current, out var languageSetting))
+                        gherkinDialect = CreateGherkinDialect(language, languageSetting);
+
+            if (gherkinDialect is null)
+                gherkinDialect = base.GetDialect(language, gherkinLanguageSettings, location);
+
+            return gherkinDialect;
+        }
+
+        public override GherkinDialect GetDialect(string language, Location location)
+            => GetDialect(language, LoadLanguageSettings(), location);
+
+        private static IEnumerable<string> _GetLanguageCodes(string cultureCode)
+        {
+            yield return cultureCode;
+
+            var slashIndex = cultureCode.IndexOf('/');
+            var countryLanguageName = cultureCode;
+            if (slashIndex >= 0)
+            {
+                countryLanguageName = cultureCode[..slashIndex];
+                yield return countryLanguageName;
+            }
+
+            var dashIndex = countryLanguageName.IndexOf('-');
+            if (dashIndex >= 0)
+            {
+                var languageCode = countryLanguageName[..dashIndex];
+                yield return languageCode;
+            }
+        }
     }
 }

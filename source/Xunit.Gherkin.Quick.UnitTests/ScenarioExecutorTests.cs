@@ -36,7 +36,6 @@ namespace UnitTests
         public async Task ExecuteScenario_Requires_ScenarioName(string scenarioName)
         {
             //arrange.
-            var featureFilePath = "/some/valid/path";
             var featureInstance = new UselessFeature();
 
             //act / assert.

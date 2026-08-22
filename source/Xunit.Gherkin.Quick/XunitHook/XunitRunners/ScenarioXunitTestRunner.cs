@@ -1,76 +1,46 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
 namespace Xunit.Gherkin.Quick
 {
-    internal sealed class ScenarioXunitTestRunner : XunitTestRunner
+    internal sealed class ScenarioXunitTestRunner : XunitTestCaseRunner
     {
-        public ScenarioXunitTestRunner(
-            ITest test, 
-            IMessageBus messageBus, 
-            Type testClass, 
-            object[] constructorArguments, 
-            MethodInfo testMethod, 
-            object[] testMethodArguments, 
-            string skipReason, 
-            IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, 
-            ExceptionAggregator aggregator, 
-            CancellationTokenSource cancellationTokenSource) 
-            
-            : base(test, messageBus, testClass, constructorArguments, testMethod, testMethodArguments, skipReason, beforeAfterAttributes, aggregator, cancellationTokenSource)
+        public ScenarioXunitTestRunner(IXunitTestCase testCase, string displayName, string skipReason, object[] constructorArguments, object[] testMethodArguments, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
+            : base(testCase, displayName, skipReason, constructorArguments, testMethodArguments, messageBus, aggregator, cancellationTokenSource)
         {
         }
 
-        private TestOutputHelper _testOutputHelper;
-
-        protected override async Task<Tuple<decimal, string>> InvokeTestAsync(ExceptionAggregator aggregator)
+        protected override XunitTestRunner CreateTestRunner(ITest test, IMessageBus messageBus, Type testClass, object[] constructorArguments, MethodInfo testMethod, object[] testMethodArguments, string skipReason, IReadOnlyList<BeforeAfterTestAttribute> beforeAfterAttributes, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
         {
-            _testOutputHelper = FindOutputHelperInArguments(ConstructorArguments);
-            var shouldOwnTestOutputHelper = _testOutputHelper == null;
-            if (shouldOwnTestOutputHelper)
-            {
-                _testOutputHelper = new TestOutputHelper();
-                _testOutputHelper.Initialize(MessageBus, Test);
-            }
+            var testOutputHelper = new TestOutputHelper();
+            testOutputHelper.Initialize(messageBus, test);
 
-            var executionResult = await base.InvokeTestAsync(aggregator);
+            var updatedTestMethodArguments = new object[(testMethodArguments?.Length ?? 0) + 1];
+            Array.Copy(
+                sourceArray: testMethodArguments,
+                sourceIndex: 0,
+                destinationArray: updatedTestMethodArguments,
+                destinationIndex: 1,
+                length: testMethodArguments.Length
+            );
+            updatedTestMethodArguments[0] = testOutputHelper;
 
-            if (shouldOwnTestOutputHelper)
-            {
-                executionResult = new Tuple<decimal, string>(executionResult.Item1, _testOutputHelper.Output);
-                _testOutputHelper.Uninitialize();
-            }
-
-            return executionResult;
-        }
-
-        protected override async Task<decimal> InvokeTestMethodAsync(ExceptionAggregator aggregator)
-        {
-            return await new ScenarioXunitTestInvoker(
-                Test,
-                MessageBus,
-                TestClass,
-                ConstructorArguments,
-                TestMethod,
-                TestMethodArguments,
-                BeforeAfterAttributes,
+            return base.CreateTestRunner(
+                test,
+                messageBus,
+                testClass,
+                constructorArguments,
+                testMethod,
+                updatedTestMethodArguments,
+                skipReason,
+                beforeAfterAttributes,
                 aggregator,
-                CancellationTokenSource,
-
-                _testOutputHelper
-                ).RunAsync();
-        }
-
-        private static TestOutputHelper FindOutputHelperInArguments(object[] args)
-        {
-            return args.FirstOrDefault(argObject => argObject is TestOutputHelper)
-                as TestOutputHelper;
+                cancellationTokenSource
+            );
         }
     }
 }

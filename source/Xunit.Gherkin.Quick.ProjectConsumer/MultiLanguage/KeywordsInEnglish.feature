@@ -1,7 +1,7 @@
 # language: en
 # https://cucumber.io/docs/gherkin/languages
-Feature: multi-language feature
-Scenario: this is a scenario using English keywords
+Feature: Multi-Language Support
+Scenario: English Keywords are Recognized
     Given given
     And and
     But but

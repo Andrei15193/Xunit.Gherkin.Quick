@@ -1,7 +1,7 @@
 # language: sk
 # https://cucumber.io/docs/gherkin/languages
-Funkcia: multi-language feature
-Scenár: this is a scenario using Slovak keywords
+Funkcia: Multi-Language Support
+Scenár: Slovak Keywords are Recognized
     Pokiaľ given
     A and
     Ale but

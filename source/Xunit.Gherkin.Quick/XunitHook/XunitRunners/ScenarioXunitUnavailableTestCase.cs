@@ -5,20 +5,20 @@ using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Xunit.Gherkin.Quick.Hooks
+namespace Xunit.Gherkin.Quick
 {
-    internal class UnavailableTestCase : XunitTestCase
+    internal sealed class ScenarioXunitUnavailableTestCase : XunitTestCase
     {
         private string _skipReason;
         private string _displayName;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Called by the de-serializer; should only be called by deriving classes for de-serialization purposes")]
-        public UnavailableTestCase()
+        public ScenarioXunitUnavailableTestCase()
         {
         }
 
-        public UnavailableTestCase(
+        public ScenarioXunitUnavailableTestCase(
             IMessageSink diagnosticMessageSink,
             TestMethodDisplay testMethodDisplay,
             ITestMethod testMethod,

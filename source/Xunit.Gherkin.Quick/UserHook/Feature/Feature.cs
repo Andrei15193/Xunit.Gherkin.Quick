@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Xunit.Abstractions;
-using Xunit.Gherkin.Quick.Hooks;
 using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
@@ -16,7 +15,7 @@ namespace Xunit.Gherkin.Quick
     /// </summary>
     public abstract class Feature : FeatureBase
     {
-        [TestScenario]
+        [Scenario]
         internal async Task Scenario(ITestOutputHelper testOutputHelper, TestScenario testScenario)
         {
             InternalOutput = testOutputHelper;

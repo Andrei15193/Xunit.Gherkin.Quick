@@ -1,7 +1,7 @@
 using System;
 using Xunit.Sdk;
 
-namespace Xunit.Gherkin.Quick.Hooks
+namespace Xunit.Gherkin.Quick
 {
     internal class TestScenarioException : XunitException
     {

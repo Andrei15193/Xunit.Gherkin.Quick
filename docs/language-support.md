@@ -1,6 +1,6 @@
 # Language Support
 
-One the at advantages of Behaviour-Driven Development (BDD) is that feature files describe what part of a system should do in non-technical language that is concrete enough to capture the context and limitations of a feature in a human-readable form. Business people, software developers, testers and even end-users can go over a feature file and make sense of it.
+One of the advantages of Behaviour-Driven Development (BDD) is that feature files describe what part of a system should do in non-technical language that is concrete enough to capture the context and limitations of a feature in a human-readable form. Business people, software developers, testers and even end-users can go over a feature file and make sense of it.
 
 As one would expect, software is developed by a wide range of people from many parts of the world meaning that not all features would be described in the default English language. The library relies on the Gherkin Parser to generate tests from feature files and they come with built-in support for handling multiple languages, even extending the available set through embedded resources.
 

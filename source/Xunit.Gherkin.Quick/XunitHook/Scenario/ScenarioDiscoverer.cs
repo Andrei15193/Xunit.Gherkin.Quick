@@ -8,15 +8,15 @@ using Xunit.Abstractions;
 using Xunit.Gherkin.Quick.TestScenarios;
 using Xunit.Sdk;
 
-namespace Xunit.Gherkin.Quick.Hooks
+namespace Xunit.Gherkin.Quick
 {
-    internal class TestCaseDiscoverer : IXunitTestCaseDiscoverer
+    internal class ScenarioDiscoverer : IXunitTestCaseDiscoverer
     {
         private readonly TestScenarioMapper _testScenarioMapper = new TestScenarioMapper(new GherkinDialectProvider());
         private readonly IReadOnlyCollection<string> _IgnoreTags = new List<string> { "ignore" };
         private readonly IMessageSink _messageSink;
 
-        public TestCaseDiscoverer(IMessageSink messageSink)
+        public ScenarioDiscoverer(IMessageSink messageSink)
             => _messageSink = messageSink;
 
         public IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo factAttribute)
@@ -36,7 +36,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                     {
                         return _GetTestCases(discoveryOptions, featurePath.Feature, testMethod)
                             .DefaultIfEmpty(
-                                new UnavailableTestCase(
+                                new ScenarioXunitUnavailableTestCase(
                                     _messageSink,
                                     discoveryOptions.MethodDisplayOrDefault(),
                                     testMethod,
@@ -49,7 +49,7 @@ namespace Xunit.Gherkin.Quick.Hooks
             catch (ParserException parserException)
             {
                 return Enumerable.Repeat(
-                    new UnavailableTestCase(
+                    new ScenarioXunitUnavailableTestCase(
                         _messageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
@@ -80,7 +80,7 @@ namespace Xunit.Gherkin.Quick.Hooks
             var testScenario = _testScenarioMapper.Map(feature, _ApplyBackground(scenario, scenarioBackground));
 
             if (_IsIgnored(testScenario))
-                return new UnavailableTestCase(
+                return new ScenarioXunitUnavailableTestCase(
                     _messageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
@@ -88,7 +88,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                     "This scenario is skipped"
                 );
             else
-                return new TestCase(
+                return new ScenarioXunitTestCase(
                     _messageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
@@ -100,7 +100,7 @@ namespace Xunit.Gherkin.Quick.Hooks
         private IEnumerable<IXunitTestCase> _GetScenarioOutlineTestCases(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, global::Gherkin.Ast.Feature feature, global::Gherkin.Ast.Background scenarioBackground, global::Gherkin.Ast.ScenarioOutline scenarioOutline)
         {
             if (scenarioOutline.Examples is null || !scenarioOutline.Examples.Any())
-                yield return new UnavailableTestCase(
+                yield return new ScenarioXunitUnavailableTestCase(
                     _messageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
@@ -113,7 +113,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                     var displayName = _GetDisplayName(feature, scenarioOutline, example);
 
                     if (example.TableHeader is null || example.TableBody is null || !example.TableBody.Any())
-                        yield return new UnavailableTestCase(
+                        yield return new ScenarioXunitUnavailableTestCase(
                             _messageSink,
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
@@ -127,7 +127,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                                 .GroupBy(headerCell => headerCell.Value, StringComparer.OrdinalIgnoreCase)
                                 .Any(group => group.Count() > 1)
                         )
-                        yield return new UnavailableTestCase(
+                        yield return new ScenarioXunitUnavailableTestCase(
                             _messageSink,
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
@@ -175,7 +175,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                 var displayName = $"{_GetDisplayName(feature, scenarioOutline, example)} ({argumentsDisplay})";
                 var testScenario = _testScenarioMapper.Map(feature, generatedScenario, arguments);
                 if (_IsIgnored(testScenario))
-                    yield return new UnavailableTestCase(
+                    yield return new ScenarioXunitUnavailableTestCase(
                         _messageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
@@ -183,7 +183,7 @@ namespace Xunit.Gherkin.Quick.Hooks
                         "This scenario is skipped"
                     );
                 else
-                    yield return new TestCase(
+                    yield return new ScenarioXunitTestCase(
                         _messageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,

@@ -28,12 +28,10 @@ namespace Xunit.Gherkin.Quick
             TestScenario testScenario
         )
             : base(diagnosticMessageSink, testMethodDisplay, testMethod, new[] { testScenario })
-        {
-            _displayName = displayName;
-        }
+            => _displayName = displayName;
 
         public override Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
-            => new ScenarioXunitTestRunner(
+            => new ScenarioXunitTestCaseRunner(
                 this,
                 DisplayName,
                 SkipReason,

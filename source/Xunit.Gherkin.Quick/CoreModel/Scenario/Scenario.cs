@@ -35,9 +35,7 @@ namespace Xunit.Gherkin.Quick
                         scenarioOutput.StepFailed($"{step.Current.Type} {step.Current.StepText}");
 
                         while (step.MoveNext())
-                        {
                             scenarioOutput.StepSkipped($"{step.Current.Type} {step.Current.StepText}");
-                        }
 
                         throw;
                     }

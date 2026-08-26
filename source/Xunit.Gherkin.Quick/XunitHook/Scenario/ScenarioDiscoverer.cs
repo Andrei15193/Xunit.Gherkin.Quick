@@ -41,7 +41,8 @@ namespace Xunit.Gherkin.Quick
                                     discoveryOptions.MethodDisplayOrDefault(),
                                     testMethod,
                                     $"'{featurePath.Feature.Name}' :: No Scenarios Defined",
-                                    $"Feature file '{featurePath.Feature.Name}' does not contain any scenarios."
+                                    $"Feature file '{featurePath.Feature.Name}' does not contain any scenarios.",
+                                    new[] { featurePath.Feature.Name }
                                 )
                             );
                     });
@@ -54,7 +55,8 @@ namespace Xunit.Gherkin.Quick
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
                         $"'{featureClassType.Name}' :: Invalid Feature File",
-                        $"The '{featureClassType.Name}' feature file is invalid, {parserException.Message}."
+                        $"The '{featureClassType.Name}' feature file is invalid, {parserException.Message}.",
+                        new[] { featureClassInfo.PathInfo }
                     ),
                     1
                 );
@@ -85,7 +87,8 @@ namespace Xunit.Gherkin.Quick
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
                     displayName,
-                    "This scenario is skipped"
+                    "This scenario is skipped",
+                    new[] { feature.Name, scenario.Name }
                 );
             else
                 return new ScenarioXunitTestCase(
@@ -105,7 +108,8 @@ namespace Xunit.Gherkin.Quick
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
                     $"{_GetDisplayName(feature, scenarioOutline)} :: No Examples Defined",
-                    $"Scenario outline '{scenarioOutline.Name}' does not contain any examples."
+                    $"Scenario outline '{scenarioOutline.Name}' does not contain any examples.",
+                    new[] { feature.Name, scenarioOutline.Name }
                 );
             else
                 foreach (var example in scenarioOutline.Examples)
@@ -118,7 +122,8 @@ namespace Xunit.Gherkin.Quick
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
                             $"{displayName} :: No Cases Defined",
-                            $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' does not contain any cases."
+                            $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' does not contain any cases.",
+                            new[] { feature.Name, scenarioOutline.Name, example.Name }
                         );
                     else if (
                             example
@@ -132,7 +137,8 @@ namespace Xunit.Gherkin.Quick
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
                             $"{displayName} :: Duplicate Parameters",
-                            $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' contains multiple parameters with the same name (case-insensitive check)."
+                            $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' contains multiple parameters with the same name (case-insensitive check).",
+                            new[] { feature.Name, scenarioOutline.Name, example.Name }
                         );
                     else
                         foreach (var testCase in _GetScenarioOutlineExampleTestCases(discoveryOptions, testMethod, feature, scenarioBackground, scenarioOutline, example))
@@ -180,7 +186,8 @@ namespace Xunit.Gherkin.Quick
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
                         displayName,
-                        "This scenario is skipped"
+                        "This scenario is skipped",
+                        new[] { feature.Name, scenarioOutline.Name, example.Name }
                     );
                 else
                     yield return new ScenarioXunitTestCase(

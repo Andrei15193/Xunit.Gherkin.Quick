@@ -31,7 +31,7 @@ namespace Xunit.Gherkin.Quick
             if (displayName is null)
                 throw new ArgumentNullException(nameof(displayName));
 
-            _displayName = testMethodArguments != null && testMethodArguments.Length > 0 ? $"{displayName}({string.Join(", ", testMethodArguments)})" : displayName;
+            _displayName = displayName;
             _skipReason = skipReason;
         }
 

@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Gherkin.Ast;
+using Moq;
 using System;
 using Xunit;
 using Xunit.Gherkin.Quick;
@@ -44,7 +45,12 @@ in it";
             sut.DigestScenarioStepValues([], docString);
 
             //assert.
-            Assert.Same(docString, sut.Value);
+            var gherkinDocString = Assert.IsType<DocString>(sut.Value);
+            Assert.Multiple(
+                () => Assert.Null(gherkinDocString.Location),
+                () => Assert.Null(gherkinDocString.ContentType),
+                () => Assert.Equal(docStringContent, gherkinDocString.Content)
+            );
         }
 
         [Fact]
@@ -63,7 +69,12 @@ in it";
             sut.DigestScenarioStepValues(["1", "2", "3"], docString);
 
             //assert.
-            Assert.Same(docString, sut.Value);
+            var gherkinDocString = Assert.IsType<DocString>(sut.Value);
+            Assert.Multiple(
+                () => Assert.Null(gherkinDocString.Location),
+                () => Assert.Null(gherkinDocString.ContentType),
+                () => Assert.Equal(docStringContent, gherkinDocString.Content)
+            );
         }
         
         [Fact]

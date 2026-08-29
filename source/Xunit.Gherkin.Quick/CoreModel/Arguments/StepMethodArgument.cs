@@ -31,10 +31,14 @@ namespace Xunit.Gherkin.Quick
 
         public abstract StepMethodArgument Clone();
 
-        public abstract void DigestScenarioStepValues(string[] argumentValues, TestStepDocStringArgument docStringArgument);
+        public abstract void DigestScenarioStepValues(string[] argumentValues, object argument);
 
-        public abstract void DigestScenarioStepValues(string[] argumentValues, TestStepTableArgument tableArgument);
+        protected static Location _MapLocation(TestStepArgumentLocation location)
+        {
+            if (location is null)
+                return null;
 
-        public abstract void DigestScenarioStepValues(string[] argumentValues);
+            return new Location(location.Line, location.Column);
+        }
     }
 }

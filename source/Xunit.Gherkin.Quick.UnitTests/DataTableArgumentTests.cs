@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Gherkin.Ast;
+using Moq;
 using System;
 using Xunit;
 using Xunit.Gherkin.Quick;
@@ -64,7 +65,64 @@ namespace UnitTests
             sut.DigestScenarioStepValues([], dataTable);
 
             //assert.
-            Assert.Same(dataTable, sut.Value);
+            var gherkinDataTable = Assert.IsType<DataTable>(sut.Value);
+            Assert.Collection(
+                gherkinDataTable.Rows,
+                firstRow => Assert.Multiple(
+                    () => Assert.Null(firstRow.Location),
+                    () => Assert.Collection(
+                        firstRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("First argument", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("Second argument", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("Result", thirdCell.Value)
+                        )
+                    )
+                ),
+                secondRow => Assert.Multiple(
+                    () => Assert.Null(secondRow.Location),
+                    () => Assert.Collection(
+                        secondRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("1", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("2", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("3", thirdCell.Value)
+                        )
+                    )
+                ),
+                thirdRow => Assert.Multiple(
+                    () => Assert.Null(thirdRow.Location),
+                    () => Assert.Collection(
+                        thirdRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("a", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("b", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("c", thirdCell.Value)
+                        )
+                    )
+                )
+            );
         }
 
         [Fact]
@@ -103,9 +161,66 @@ namespace UnitTests
             sut.DigestScenarioStepValues(["1", "2", "3"], dataTable);
 
             //assert.
-            Assert.Same(dataTable, sut.Value);
+            var gherkinDataTable = Assert.IsType<DataTable>(sut.Value);
+            Assert.Collection(
+                gherkinDataTable.Rows,
+                firstRow => Assert.Multiple(
+                    () => Assert.Null(firstRow.Location),
+                    () => Assert.Collection(
+                        firstRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("First argument", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("Second argument", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("Result", thirdCell.Value)
+                        )
+                    )
+                ),
+                secondRow => Assert.Multiple(
+                    () => Assert.Null(secondRow.Location),
+                    () => Assert.Collection(
+                        secondRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("1", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("2", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("3", thirdCell.Value)
+                        )
+                    )
+                ),
+                thirdRow => Assert.Multiple(
+                    () => Assert.Null(thirdRow.Location),
+                    () => Assert.Collection(
+                        thirdRow.Cells,
+                        firstCell => Assert.Multiple(
+                            () => Assert.Null(firstCell.Location),
+                            () => Assert.Equal("a", firstCell.Value)
+                        ),
+                        secondCell => Assert.Multiple(
+                            () => Assert.Null(secondCell.Location),
+                            () => Assert.Equal("b", secondCell.Value)
+                        ),
+                        thirdCell => Assert.Multiple(
+                            () => Assert.Null(thirdCell.Location),
+                            () => Assert.Equal("c", thirdCell.Value)
+                        )
+                    )
+                )
+            );
         }
-        
+
         [Fact]
         public void IsSameAs_Identifies_Similar_Instances()
         {

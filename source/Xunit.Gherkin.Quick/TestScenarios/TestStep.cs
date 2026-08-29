@@ -66,6 +66,11 @@ namespace Xunit.Gherkin.Quick.TestScenarios
         public string Text { get; private set; }
 
         /// <summary>
+        /// Gets the step argument as specified in the feature file, if present; <c>null</c> otherwise.
+        /// </summary>
+        public object Argument => DocStringArgument ?? TableArgument as object;
+
+        /// <summary>
         /// Gets the doc string argument as specified in the feature file, if pressent; <c>null</c> otherwise.
         /// </summary>
         public TestStepDocStringArgument DocStringArgument { get; private set; }

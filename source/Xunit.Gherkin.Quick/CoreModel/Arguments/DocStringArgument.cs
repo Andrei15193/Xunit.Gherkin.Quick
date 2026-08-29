@@ -1,4 +1,5 @@
 ﻿using System;
+using Gherkin.Ast;
 using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
@@ -8,14 +9,19 @@ namespace Xunit.Gherkin.Quick
         public override StepMethodArgument Clone()
             => new DocStringArgument();
 
-        public override void DigestScenarioStepValues(string[] argumentValues, TestStepDocStringArgument docStringArgument)
-            => Value = docStringArgument ?? throw new InvalidOperationException("DocString cannot be extracted from Gherkin.");
-
-        public override void DigestScenarioStepValues(string[] argumentValues, TestStepTableArgument tableArgument)
-            => throw new InvalidOperationException("DocString cannot be extracted from Gherkin.");
-
-        public override void DigestScenarioStepValues(string[] argumentValues)
-            => throw new InvalidOperationException("DocString cannot be extracted from Gherkin.");
+        public override void DigestScenarioStepValues(string[] argumentValues, object argument)
+        {
+            if (argument is DocString gherkinDocString)
+                Value = gherkinDocString;
+            else if (argument is TestStepDocStringArgument testStepDocString)
+                Value = new DocString(
+                    _MapLocation(testStepDocString.Location),
+                    testStepDocString.ContentType,
+                    testStepDocString.Content
+                );
+            else
+                throw new InvalidOperationException("DocString cannot be extracted from Gherkin.");
+        }
 
         public override bool IsSameAs(StepMethodArgument other)
             => other is DocStringArgument;

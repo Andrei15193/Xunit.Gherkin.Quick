@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Gherkin.Ast;
-using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -39,7 +36,7 @@ namespace Xunit.Gherkin.Quick
 
         public async Task InvokeMethodAsync(object[] parameters)
         {
-            var result = _methodInfo.Invoke(_target, _MapParameters(parameters));
+            var result = _methodInfo.Invoke(_target, parameters);
             if (result is Task resultAsTask)
                 await resultAsTask;
         }
@@ -55,45 +52,6 @@ namespace Xunit.Gherkin.Quick
         }
 
         public string GetMethodName()
-        {
-            return _methodInfo.Name;
-        }
-
-        private object[] _MapParameters(object[] parameters)
-        {
-            var parameterInfos = _methodInfo.GetParameters();
-
-            return parameters
-                ?.Select((parameter, parameterIndex) =>
-                {
-                    if (parameterInfos[parameterIndex].ParameterType == typeof(DocString))
-                        return _MapToDocString((TestStepDocStringArgument)parameter);
-                    else if (parameterInfos[parameterIndex].ParameterType == typeof(DataTable))
-                        return _MapToDataTable((TestStepTableArgument)parameter);
-                    else
-                        return parameter;
-                })
-                .ToArray();
-        }
-
-        private static DocString _MapToDocString(TestStepDocStringArgument docString)
-            => new DocString(_MapToLocation(docString.Location), docString.ContentType, docString.Content);
-
-        private static DataTable _MapToDataTable(TestStepTableArgument dataTable)
-            => new DataTable(
-                dataTable
-                    .Rows
-                    .Select(row => new TableRow(
-                        _MapToLocation(row.Location),
-                        row
-                            .Cells
-                            .Select(cell => new TableCell(_MapToLocation(cell.Location), cell.Value))
-                            .ToArray()
-                    ))
-                    .ToArray()
-            );
-
-        private static Location _MapToLocation(TestStepArgumentLocation location)
-            => location is null ? null : new Location(location.Line, location.Column);
+            => _methodInfo.Name;
     }
 }

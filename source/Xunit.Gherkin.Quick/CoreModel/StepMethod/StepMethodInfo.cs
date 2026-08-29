@@ -98,14 +98,7 @@ namespace Xunit.Gherkin.Quick
                 .ToArray();
 
             foreach (var arg in _arguments)
-            {
-                if (testStep.DocStringArgument is object)
-                    arg.DigestScenarioStepValues(argumentValuesFromStep, testStep.DocStringArgument);
-                else if (testStep.TableArgument is object)
-                    arg.DigestScenarioStepValues(argumentValuesFromStep, testStep.TableArgument);
-                else
-                    arg.DigestScenarioStepValues(argumentValuesFromStep);
-            }
+                arg.DigestScenarioStepValues(argumentValuesFromStep, testStep.Argument);
 
             _lastDigestedStepText = testStepText;
         }

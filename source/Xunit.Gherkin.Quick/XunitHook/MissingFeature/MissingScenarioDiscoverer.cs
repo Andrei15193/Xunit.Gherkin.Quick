@@ -10,6 +10,7 @@ namespace Xunit.Gherkin.Quick
 {
     internal sealed class MissingScenarioDiscoverer : IXunitTestCaseDiscoverer
     {
+        private const string _displayNameSeparator = " :: ";
         private readonly IMessageSink _messageSink;
 
         public MissingScenarioDiscoverer(IMessageSink messageSink)
@@ -62,7 +63,6 @@ namespace Xunit.Gherkin.Quick
 
         private IEnumerable<IXunitTestCase> _GetTestCases(ITestFrameworkDiscoveryOptions discoveryOptions, global::Gherkin.Ast.Feature feature, ITestMethod testMethod)
         {
-
             foreach (var scenarioDefinition in feature.Children)
                 if (scenarioDefinition is global::Gherkin.Ast.Scenario scenario)
                     yield return new ScenarioXunitUnavailableTestCase(
@@ -76,18 +76,23 @@ namespace Xunit.Gherkin.Quick
                 else if (scenarioDefinition is global::Gherkin.Ast.ScenarioOutline scenarioOutline)
                     if (scenarioOutline.Examples.Any())
                     {
-                        var exampleCount = 1;
+                        var exampleNumber = 1;
                         foreach (var example in scenarioOutline.Examples)
                         {
-                            yield return new ScenarioXunitUnavailableTestCase(
-                                _messageSink,
-                                discoveryOptions.MethodDisplayOrDefault(),
-                                testMethod,
-                                _GetDisplayName(feature, scenarioOutline),
-                                $"Scenario outline `{scenarioOutline.Name}`, example `{example.Name}` `#{exampleCount}` is not implemented.",
-                                new[] { feature.Name, scenarioOutline.Name, example.Name }
-                            );
-                            exampleCount++;
+                            var rowNumber = 1;
+                            foreach (var dataRow in example.TableBody)
+                            {
+                                yield return new ScenarioXunitUnavailableTestCase(
+                                    _messageSink,
+                                    discoveryOptions.MethodDisplayOrDefault(),
+                                    testMethod,
+                                    string.Join(_displayNameSeparator, _GetDisplayName(feature, scenarioOutline, example), $"#{rowNumber}"),
+                                    $"Scenario outline `{scenarioOutline.Name}`, example `{example.Name}` `#{rowNumber}` is not implemented.",
+                                    new object[] { feature.Name, scenarioOutline.Name, example.Name, exampleNumber, rowNumber }
+                                );
+                                rowNumber++;
+                            }
+                            exampleNumber++;
                         }
                     }
                     else
@@ -102,6 +107,6 @@ namespace Xunit.Gherkin.Quick
         }
 
         private static string _GetDisplayName(params IHasDescription[] hasDescriptions)
-            => string.Join(" :: ", hasDescriptions.Select(hasDescription => hasDescription.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+            => string.Join(_displayNameSeparator, hasDescriptions.Select(hasDescription => hasDescription.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
     }
 }

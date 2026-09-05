@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Xunit.Abstractions;
+using Xunit.Gherkin.Quick.TestScenarios;
 
 namespace Xunit.Gherkin.Quick
 {
@@ -13,9 +15,10 @@ namespace Xunit.Gherkin.Quick
     public abstract class MissingFeature : FeatureBase
     {
         [MissingScenario]
-        internal Task Scenario()
+        internal async Task Scenarios(ITestOutputHelper testOutputHelper, TestScenario testScenario)
         {
-            throw new NotImplementedException($"Scenario is not implemented.");
+            InternalOutput = testOutputHelper;
+            throw new NotImplementedException($"Scenario `{testScenario.ScenarioName}` is not implemented.");
         }
     }
 }

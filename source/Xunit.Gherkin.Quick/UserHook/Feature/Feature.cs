@@ -16,7 +16,7 @@ namespace Xunit.Gherkin.Quick
     public abstract class Feature : FeatureBase
     {
         [Scenario]
-        internal async Task Scenario(ITestOutputHelper testOutputHelper, TestScenario testScenario)
+        internal async Task Scenarios(ITestOutputHelper testOutputHelper, TestScenario testScenario)
         {
             InternalOutput = testOutputHelper;
             var featureEvaluator = new ScenarioExecutor();

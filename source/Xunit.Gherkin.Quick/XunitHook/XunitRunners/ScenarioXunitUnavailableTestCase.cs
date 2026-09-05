@@ -1,7 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -48,9 +46,6 @@ namespace Xunit.Gherkin.Quick
             _displayName = data.GetValue<string>(nameof(_displayName));
             _skipReason = data.GetValue<string>(nameof(_skipReason));
         }
-
-        public override Task<RunSummary> RunAsync(IMessageSink diagnosticMessageSink, IMessageBus messageBus, object[] constructorArguments, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource)
-            => Task.FromResult(new RunSummary { Total = 1, Skipped = 1, Failed = 0, Time = 0 });
 
         protected override string GetDisplayName(IAttributeInfo factAttribute, string displayName)
         {

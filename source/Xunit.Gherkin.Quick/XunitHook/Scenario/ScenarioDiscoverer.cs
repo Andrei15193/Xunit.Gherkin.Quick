@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,12 +14,13 @@ namespace Xunit.Gherkin.Quick
     {
         private readonly TestScenarioMapper _testScenarioMapper = new TestScenarioMapper(new GherkinDialectProvider());
         private readonly IReadOnlyCollection<string> _IgnoreTags = new List<string> { "ignore" };
-        private readonly IMessageSink _messageSink;
 
         public ScenarioDiscoverer(IMessageSink messageSink)
-            => _messageSink = messageSink;
+            => MessageSink = messageSink;
 
-        public IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo factAttribute)
+        protected IMessageSink MessageSink { get; }
+
+        public virtual IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod, IAttributeInfo factAttribute)
         {
             var featureClassType = testMethod.Method.Type.ToRuntimeType();
             var assembly = featureClassType.GetTypeInfo().Assembly;
@@ -34,13 +35,13 @@ namespace Xunit.Gherkin.Quick
                 return featurePathsAndFiles
                     .SelectMany(featurePath =>
                     {
-                        return _GetTestCases(discoveryOptions, featurePath.Feature, testMethod)
+                        return GetTestCases(discoveryOptions, featurePath.Feature, testMethod)
                             .DefaultIfEmpty(
                                 new ScenarioXunitUnavailableTestCase(
-                                    _messageSink,
+                                    MessageSink,
                                     discoveryOptions.MethodDisplayOrDefault(),
                                     testMethod,
-                                    $"'{featurePath.Feature.Name}' :: No Scenarios Defined",
+                                    _GetDisplayName($"'{featurePath.Feature.Name}'", "No Scenarios Defined"),
                                     $"Feature file '{featurePath.Feature.Name}' does not contain any scenarios.",
                                     new[] { featurePath.Feature.Name }
                                 )
@@ -51,10 +52,10 @@ namespace Xunit.Gherkin.Quick
             {
                 return Enumerable.Repeat(
                     new ScenarioXunitUnavailableTestCase(
-                        _messageSink,
+                        MessageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
-                        $"'{featureClassType.Name}' :: Invalid Feature File",
+                        _GetDisplayName($"'{featureClassType.Name}'", "Invalid Feature File"),
                         $"The '{featureClassType.Name}' feature file is invalid, {parserException.Message}.",
                         new[] { featureClassInfo.PathInfo }
                     ),
@@ -63,7 +64,7 @@ namespace Xunit.Gherkin.Quick
             }
         }
 
-        private IEnumerable<IXunitTestCase> _GetTestCases(ITestFrameworkDiscoveryOptions discoveryOptions, global::Gherkin.Ast.Feature feature, ITestMethod testMethod)
+        protected IEnumerable<IXunitTestCase> GetTestCases(ITestFrameworkDiscoveryOptions discoveryOptions, global::Gherkin.Ast.Feature feature, ITestMethod testMethod)
         {
             Background scenarioBackground = null;
             foreach (var scenarioDefinition in feature.Children)
@@ -83,7 +84,7 @@ namespace Xunit.Gherkin.Quick
 
             if (_IsIgnored(testScenario))
                 return new ScenarioXunitUnavailableTestCase(
-                    _messageSink,
+                    MessageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
                     displayName,
@@ -92,7 +93,7 @@ namespace Xunit.Gherkin.Quick
                 );
             else
                 return new ScenarioXunitTestCase(
-                    _messageSink,
+                    MessageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
                     displayName,
@@ -104,10 +105,10 @@ namespace Xunit.Gherkin.Quick
         {
             if (scenarioOutline.Examples is null || !scenarioOutline.Examples.Any())
                 yield return new ScenarioXunitUnavailableTestCase(
-                    _messageSink,
+                    MessageSink,
                     discoveryOptions.MethodDisplayOrDefault(),
                     testMethod,
-                    $"{_GetDisplayName(feature, scenarioOutline)} :: No Examples Defined",
+                    _GetDisplayName(_GetDisplayName(feature, scenarioOutline), "No Examples Defined"),
                     $"Scenario outline '{scenarioOutline.Name}' does not contain any examples.",
                     new[] { feature.Name, scenarioOutline.Name }
                 );
@@ -118,10 +119,10 @@ namespace Xunit.Gherkin.Quick
 
                     if (example.TableHeader is null || example.TableBody is null || !example.TableBody.Any())
                         yield return new ScenarioXunitUnavailableTestCase(
-                            _messageSink,
+                            MessageSink,
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
-                            $"{displayName} :: No Cases Defined",
+                            _GetDisplayName(displayName, "No Cases Defined"),
                             $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' does not contain any cases.",
                             new[] { feature.Name, scenarioOutline.Name, example.Name }
                         );
@@ -133,10 +134,10 @@ namespace Xunit.Gherkin.Quick
                                 .Any(group => group.Count() > 1)
                         )
                         yield return new ScenarioXunitUnavailableTestCase(
-                            _messageSink,
+                            MessageSink,
                             discoveryOptions.MethodDisplayOrDefault(),
                             testMethod,
-                            $"{displayName} :: Duplicate Parameters",
+                            _GetDisplayName(displayName, "Duplicate Parameters"),
                             $"Example '{example.Name}' for scenario outline '{scenarioOutline.Name}' contains multiple parameters with the same name (case-insensitive check).",
                             new[] { feature.Name, scenarioOutline.Name, example.Name }
                         );
@@ -162,6 +163,7 @@ namespace Xunit.Gherkin.Quick
                 scenarioBackground
             );
 
+            var exampleNumber = 1;
             foreach (var @case in example.TableBody)
             {
                 var arguments = example
@@ -178,20 +180,21 @@ namespace Xunit.Gherkin.Quick
                         .Zip(@case.Cells, (headerCell, caseCell) => $"{headerCell.Value} = {caseCell.Value}")
                 );
 
-                var displayName = $"{_GetDisplayName(feature, scenarioOutline, example)} ({argumentsDisplay})";
+                var displayName = _GetDisplayName(_GetDisplayName(feature, scenarioOutline, example), $"#{exampleNumber}");
                 var testScenario = _testScenarioMapper.Map(feature, generatedScenario, arguments);
+                exampleNumber++;
                 if (_IsIgnored(testScenario))
                     yield return new ScenarioXunitUnavailableTestCase(
-                        _messageSink,
+                        MessageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
                         displayName,
                         "This scenario is skipped",
-                        new[] { feature.Name, scenarioOutline.Name, example.Name }
+                        new object[] { feature.Name, scenarioOutline.Name, example.Name, exampleNumber }
                     );
                 else
                     yield return new ScenarioXunitTestCase(
-                        _messageSink,
+                        MessageSink,
                         discoveryOptions.MethodDisplayOrDefault(),
                         testMethod,
                         displayName,
@@ -204,7 +207,13 @@ namespace Xunit.Gherkin.Quick
             => _IgnoreTags.Any(ignoreTag => testScenario.Tags.Contains(ignoreTag, StringComparer.OrdinalIgnoreCase));
 
         private static string _GetDisplayName(params IHasDescription[] hasDescriptions)
-            => string.Join(" :: ", hasDescriptions.Select(hasDescription => hasDescription.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+            => _GetDisplayName(hasDescriptions.Select(hasDescription => hasDescription.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+
+        private static string _GetDisplayName(params string[] names)
+            => _GetDisplayName(names.AsEnumerable());
+            
+        private static string _GetDisplayName(IEnumerable<string> names)
+            => string.Join(" :: ", names.Where(name => !string.IsNullOrWhiteSpace(name)));
 
         private static global::Gherkin.Ast.Scenario _ApplyBackground(global::Gherkin.Ast.Scenario scenario, global::Gherkin.Ast.Background background)
             => background is null || !background.Steps.Any()
